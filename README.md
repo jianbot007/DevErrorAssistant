@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # DevErrorAssistant
 
 A developer-friendly ASP.NET Core exception-handling middleware package that intercepts unhandled runtime exceptions during development and renders a clean, self-contained diagnostic error view.
@@ -247,3 +248,6 @@ The `DevErrorAssistant` architecture has been designed with explicit extension p
 
 > [!NOTE]
 > None of the above AI features are active in this MVP. All explanation and solution fields currently return static placeholder strings (`Future Implements — ...`).
+=======
+"# DevErrorAssistant" 
+>>>>>>> b92cfd459df0cd562ead443ddcee96a418437775
