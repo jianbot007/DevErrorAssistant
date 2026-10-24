@@ -5,16 +5,16 @@
 <div class="text-center py-5">
     <h1 class="display-5 fw-bold mb-3">DevErrorAssistant Demo Application</h1>
     <p class="lead text-muted mb-4">
-        This sample application demonstrates the <code>DevErrorAssistant</code> NuGet package.
+        Demonstrates the <code>DevErrorAssistant</code> package with developer diagnostics and optional Groq AI explanations.
     </p>
 
-    <div class="card shadow-sm mx-auto p-4" style="max-width: 600px; text-align: left;">
-        <h5 class="card-title text-danger">Test Unhandled Runtime Exception</h5>
+    <div class="card shadow-sm mx-auto p-4 mb-4" style="max-width: 680px; text-align: left;">
+        <h5 class="card-title text-danger">1. Test Unhandled Runtime Exception</h5>
         <p class="card-text text-secondary">
-            Click the button below to invoke <code>/Home/ThrowError</code>. This endpoint deliberately throws an unhandled
-            <code>System.InvalidOperationException</code> to demonstrate the custom error page, collapsible stack trace, and Future Implements placeholders.
+            Click below to invoke <code>/Home/ThrowError</code>. This endpoint deliberately throws an unhandled
+            <code>System.InvalidOperationException</code> to demonstrate the custom error page, collapsible stack trace, and AI explanation.
         </p>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 mb-3">
             <a asp-controller="Home" asp-action="ThrowError" class="btn btn-danger">
                 Trigger Test Exception
             </a>
@@ -22,5 +22,19 @@
                 Normal Page (Privacy)
             </a>
         </div>
+        <small class="text-muted">
+            <em>Note: If no Groq API key is configured, the application degrades gracefully: the full diagnostic page displays, and the AI card clearly notes that the API key is not configured. The app will never crash due to a missing key.</em>
+        </small>
+    </div>
+
+    <div class="card shadow-sm mx-auto p-4" style="max-width: 680px; text-align: left; background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+        <h5 class="card-title text-primary">2. Local AI Configuration (.NET User Secrets)</h5>
+        <p class="card-text text-secondary" style="font-size: 0.95rem;">
+            To test live AI explanations locally without exposing your secret, configure User Secrets from your terminal:
+        </p>
+        <pre class="bg-dark text-light p-3 rounded" style="font-size: 0.85rem; overflow-x: auto;">dotnet user-secrets set "Groq:ApiKey" "YOUR_GROQ_API_KEY" --project DevErrorAssistant.Demo</pre>
+        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0;">
+            <strong>Security Rule:</strong> Never commit API keys or secret files to git. User Secrets are stored securely outside the repository directory.
+        </p>
     </div>
 </div>

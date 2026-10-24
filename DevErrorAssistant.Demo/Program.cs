@@ -3,6 +3,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Register DevErrorAssistant services and configure AI options
+builder.Services.AddDevErrorAssistant(options =>
+{
+    // Opt-in to AI explanations (enabled in development demo)
+    options.Ai.Enabled = builder.Configuration.GetValue<bool>("DevErrorAssistant:Ai:Enabled", true);
+    options.Ai.Model = builder.Configuration["DevErrorAssistant:Ai:Model"] ?? "llama-3.3-70b-versatile";
+    // Note: The Groq API key is resolved automatically at runtime from configuration (Groq:ApiKey) or User Secrets.
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
