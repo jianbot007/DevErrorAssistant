@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "DevErrorAssistant Demo";
+}
+
+<div class="text-center py-5">
+    <h1 class="display-5 fw-bold mb-3">DevErrorAssistant Demo Application</h1>
+    <p class="lead text-muted mb-4">
+        This sample application demonstrates the <code>DevErrorAssistant</code> NuGet package.
+    </p>
+
+    <div class="card shadow-sm mx-auto p-4" style="max-width: 600px; text-align: left;">
+        <h5 class="card-title text-danger">Test Unhandled Runtime Exception</h5>
+        <p class="card-text text-secondary">
+            Click the button below to invoke <code>/Home/ThrowError</code>. This endpoint deliberately throws an unhandled
+            <code>System.InvalidOperationException</code> to demonstrate the custom error page, collapsible stack trace, and Future Implements placeholders.
+        </p>
+        <div class="d-flex gap-2">
+            <a asp-controller="Home" asp-action="ThrowError" class="btn btn-danger">
+                Trigger Test Exception
+            </a>
+            <a asp-controller="Home" asp-action="Privacy" class="btn btn-outline-secondary">
+                Normal Page (Privacy)
+            </a>
+        </div>
+    </div>
+</div>
