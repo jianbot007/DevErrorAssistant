@@ -29,10 +29,10 @@ public class DevErrorViewModelTests
         Assert.NotNull(model.StackTrace);
         Assert.Contains(nameof(FromException_WhenShowDetailsIsTrue_PopulatesDiagnosticFields), model.StackTrace);
 
-        // Future Implements placeholders
-        Assert.Equal("Future Implements — AI-generated explanation of this exception.", model.Explanation);
-        Assert.Equal("Future Implements — AI-generated suggestions for resolving this exception.", model.PossibleSolution);
-        Assert.Equal("Not implemented in this MVP.", model.AiStatus);
+        // Default diagnostic guidance placeholders when AI is not invoked
+        Assert.Equal("AI diagnostic explanations are currently disabled.", model.Explanation);
+        Assert.Equal("Inspect the stack trace and application logs to locate and resolve the issue.", model.PossibleSolution);
+        Assert.Equal("Disabled", model.AiStatus);
     }
 
     [Fact]
@@ -61,10 +61,10 @@ public class DevErrorViewModelTests
         Assert.Equal("An error occurred", model.ExceptionType);
         Assert.Contains("Detailed diagnostic information is disabled in this environment.", model.ExceptionMessage);
 
-        // Future Implements placeholders remain present
-        Assert.Equal("Future Implements — AI-generated explanation of this exception.", model.Explanation);
-        Assert.Equal("Future Implements — AI-generated suggestions for resolving this exception.", model.PossibleSolution);
-        Assert.Equal("Not implemented in this MVP.", model.AiStatus);
+        // Default guidance placeholders remain present
+        Assert.Equal("AI diagnostic explanations are currently disabled.", model.Explanation);
+        Assert.Equal("Inspect the stack trace and application logs to locate and resolve the issue.", model.PossibleSolution);
+        Assert.Equal("Disabled", model.AiStatus);
     }
 
     [Fact]

@@ -282,7 +282,7 @@
         <!-- Header -->
         <header>
             <div class="brand">
-                <span class="brand-badge">MVP</span>
+                <span class="brand-badge">Diagnostics</span>
                 <h1>DevErrorAssistant</h1>
             </div>
             <div class="status-badge">
@@ -334,14 +334,7 @@
         <section class="card ai-section">
             <div class="card-header">
                 <h2 class="card-title" style="color: var(--accent-ai);">
-                    @if (Model.IsAiAvailable)
-                    {
-                        <span>AI Exception Insights</span>
-                    }
-                    else
-                    {
-                        <span>Future Implements — AI Exception Insights</span>
-                    }
+                    <span>AI Exception Insights</span>
                 </h2>
                 <span class="ai-badge">
                     @if (Model.IsAiAvailable)
@@ -350,7 +343,7 @@
                     }
                     else
                     {
-                        <span>Planned Feature</span>
+                        <span>AI Advisory</span>
                     }
                 </span>
             </div>
@@ -395,7 +388,7 @@
                     }
                     else
                     {
-                        <span>Offline MVP — No external AI services or API keys used</span>
+                        <span>AI Inactive &bull; No external provider calls made</span>
                     }
                 </span>
             </div>

@@ -91,11 +91,11 @@ public class DevErrorMiddlewareTests
         Assert.Contains("Demo simulated runtime failure in development.", decodedContent);
         Assert.Contains("Stack Trace", decodedContent);
 
-        // Check Future Implements AI placeholders
-        Assert.Contains("Future Implements — AI Exception Insights", decodedContent);
-        Assert.Contains("Future Implements — AI-generated explanation of this exception.", decodedContent);
-        Assert.Contains("Future Implements — AI-generated suggestions for resolving this exception.", decodedContent);
-        Assert.Contains("Not implemented in this MVP.", decodedContent);
+        // Check AI section and default guidance
+        Assert.Contains("AI Exception Insights", decodedContent);
+        Assert.Contains("AI diagnostic explanations are currently disabled.", decodedContent);
+        Assert.Contains("Inspect the stack trace and application logs to locate and resolve the issue.", decodedContent);
+        Assert.Contains("Disabled", decodedContent);
     }
 
     [Fact]
@@ -139,11 +139,11 @@ public class DevErrorMiddlewareTests
         Assert.DoesNotContain("db_admin", decodedContent);
         Assert.DoesNotContain("super_secret", decodedContent);
 
-        // Future Implements placeholders remain visible
-        Assert.Contains("Future Implements — AI Exception Insights", decodedContent);
-        Assert.Contains("Future Implements — AI-generated explanation of this exception.", decodedContent);
-        Assert.Contains("Future Implements — AI-generated suggestions for resolving this exception.", decodedContent);
-        Assert.Contains("Not implemented in this MVP.", decodedContent);
+        // AI guidance defaults remain visible
+        Assert.Contains("AI Exception Insights", decodedContent);
+        Assert.Contains("AI diagnostic explanations are currently disabled.", decodedContent);
+        Assert.Contains("Inspect the stack trace and application logs to locate and resolve the issue.", decodedContent);
+        Assert.Contains("Disabled", decodedContent);
     }
 
     [Fact]

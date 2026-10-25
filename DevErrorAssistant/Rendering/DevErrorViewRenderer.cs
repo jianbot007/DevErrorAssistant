@@ -201,7 +201,7 @@ public class DevErrorViewRenderer : IDevErrorViewRenderer
     <div class=""container"">
         <header>
             <div class=""brand"">
-                <span class=""brand-badge"">MVP</span>
+                <span class=""brand-badge"">Diagnostics</span>
                 <h1 style=""font-size: 1.4rem; margin: 0;"">DevErrorAssistant</h1>
             </div>
             <div class=""status-badge"">HTTP 500 — Unhandled Exception</div>

@@ -35,7 +35,7 @@ public class DevErrorViewModel
     /// <summary>
     /// Plain-English explanation of why the exception may have occurred.
     /// </summary>
-    public string Explanation { get; set; } = "Future Implements — AI-generated explanation of this exception.";
+    public string Explanation { get; set; } = "AI diagnostic explanations are currently disabled.";
 
     /// <summary>
     /// Bullet points or description of likely root causes.
@@ -50,12 +50,12 @@ public class DevErrorViewModel
     /// <summary>
     /// Actionable suggestions or code fixes to resolve the exception.
     /// </summary>
-    public string PossibleSolution { get; set; } = "Future Implements — AI-generated suggestions for resolving this exception.";
+    public string PossibleSolution { get; set; } = "Inspect the stack trace and application logs to locate and resolve the issue.";
 
     /// <summary>
     /// Current status of the AI analysis provider/service.
     /// </summary>
-    public string AiStatus { get; set; } = "Not implemented in this MVP.";
+    public string AiStatus { get; set; } = "Disabled";
 
     /// <summary>
     /// Indicates whether a successful AI explanation was generated.
@@ -92,9 +92,9 @@ public class DevErrorViewModel
                 ExceptionMessage = exception.Message,
                 StackTrace = exception.StackTrace,
                 ShowDetails = true,
-                Explanation = "Future Implements — AI-generated explanation of this exception.",
-                PossibleSolution = "Future Implements — AI-generated suggestions for resolving this exception.",
-                AiStatus = "Not implemented in this MVP."
+                Explanation = "AI diagnostic explanations are currently disabled.",
+                PossibleSolution = "Inspect the stack trace and application logs to locate and resolve the issue.",
+                AiStatus = "Disabled"
             };
         }
 
@@ -104,9 +104,9 @@ public class DevErrorViewModel
             ExceptionMessage = "An unexpected error occurred while processing your request. Detailed diagnostic information is disabled in this environment.",
             StackTrace = null,
             ShowDetails = false,
-            Explanation = "Future Implements — AI-generated explanation of this exception.",
-            PossibleSolution = "Future Implements — AI-generated suggestions for resolving this exception.",
-            AiStatus = "Not implemented in this MVP."
+            Explanation = "AI diagnostic explanations are currently disabled.",
+            PossibleSolution = "Inspect the stack trace and application logs to locate and resolve the issue.",
+            AiStatus = "Disabled"
         };
     }
 
