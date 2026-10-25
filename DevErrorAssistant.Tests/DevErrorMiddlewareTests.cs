@@ -1,4 +1,5 @@
 using System.Net;
+using DevErrorAssistant.Ai;
 using DevErrorAssistant.Middleware;
 using DevErrorAssistant.Rendering;
 using Microsoft.AspNetCore.Builder;
@@ -263,5 +264,167 @@ public class DevErrorMiddlewareTests
 
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("Testing Razor view resolution from RCL.", content);
+    }
+
+    [Fact]
+    public async Task UnhandledException_WithAiEnabled_WhenProviderSucceeds_RendersAiInsightsAndDisclaimer()
+    {
+        const string mockGroqResponse = @"{
+            ""id"": ""chatcmpl-test"",
+            ""choices"": [
+                {
+                    ""message"": {
+                        ""role"": ""assistant"",
+                        ""content"": ""### Explanation\nThis is an AI generated diagnosis of the exception.\n\n### Likely Causes\n- Missing initialization\n\n### Recommended Steps\n1. Review caller\n\n### Possible Fixes\nInitialize the object before access.""
+                    }
+                }
+            ]
+        }";
+
+        var fakeHandler = FakeHttpMessageHandler.RespondingWith(HttpStatusCode.OK, mockGroqResponse);
+
+        using var host = await new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder.UseEnvironment("Development");
+                webBuilder.UseTestServer();
+                webBuilder.ConfigureServices(services =>
+                {
+                    services.AddControllersWithViews();
+                    services.AddDevErrorAssistant(options =>
+                    {
+                        options.Ai.Enabled = true;
+                        options.Ai.ApiKey = "fake-test-key";
+                    });
+                    // Override HTTP client factory with test double
+                    services.AddSingleton<IHttpClientFactory>(new TestHttpClientFactory(fakeHandler));
+                });
+                webBuilder.Configure(app =>
+                {
+                    app.UseDevErrorAssistant();
+                    app.Run(context =>
+                    {
+                        throw new InvalidOperationException("Test exception with AI enabled.");
+                    });
+                });
+            })
+            .StartAsync();
+
+        var client = host.GetTestClient();
+        var response = await client.GetAsync("/ai-test");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var decodedContent = WebUtility.HtmlDecode(content);
+
+        Assert.Contains("AI Exception Insights", decodedContent);
+        Assert.Contains("This is an AI generated diagnosis of the exception.", decodedContent);
+        Assert.Contains("Missing initialization", decodedContent);
+        Assert.Contains("Initialize the object before access.", decodedContent);
+        Assert.Contains("diagnostic guidance and may be incomplete or incorrect", decodedContent);
+    }
+
+    [Fact]
+    public async Task UnhandledException_WithAiEnabled_WhenProviderFails_OriginalExceptionStillDiagnosable()
+    {
+        var fakeHandler = FakeHttpMessageHandler.RespondingWith(HttpStatusCode.InternalServerError, "Groq Outage");
+
+        using var host = await new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder.UseEnvironment("Development");
+                webBuilder.UseTestServer();
+                webBuilder.ConfigureServices(services =>
+                {
+                    services.AddControllersWithViews();
+                    services.AddDevErrorAssistant(options =>
+                    {
+                        options.Ai.Enabled = true;
+                        options.Ai.ApiKey = "fake-test-key";
+                    });
+                    services.AddSingleton<IHttpClientFactory>(new TestHttpClientFactory(fakeHandler));
+                });
+                webBuilder.Configure(app =>
+                {
+                    app.UseDevErrorAssistant();
+                    app.Run(context =>
+                    {
+                        throw new InvalidOperationException("Real business logic failed unexpectedly.");
+                    });
+                });
+            })
+            .StartAsync();
+
+        var client = host.GetTestClient();
+        var response = await client.GetAsync("/ai-failure-test");
+
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+
+        var content = await response.Content.ReadAsStringAsync();
+        var decodedContent = WebUtility.HtmlDecode(content);
+
+        // Original exception must remain completely intact and diagnosable
+        Assert.Contains("System.InvalidOperationException", decodedContent);
+        Assert.Contains("Real business logic failed unexpectedly.", decodedContent);
+
+        // AI section shows graceful status
+        Assert.Contains("AI explanation unavailable: Groq service returned HTTP 500", decodedContent);
+    }
+
+    [Fact]
+    public async Task UnhandledException_WithAiEnabled_HtmlEncodesAiOutputSafely()
+    {
+        const string maliciousContent = @"{
+            ""id"": ""chatcmpl-xss"",
+            ""choices"": [
+                {
+                    ""message"": {
+                        ""role"": ""assistant"",
+                        ""content"": ""### Explanation\n<script>alert('xss-exploit')</script>\n\n### Likely Causes\n<img src=x onerror=alert(1)>\n\n### Recommended Steps\nNone\n\n### Possible Fixes\nSanitize HTML""
+                    }
+                }
+            ]
+        }";
+
+        var fakeHandler = FakeHttpMessageHandler.RespondingWith(HttpStatusCode.OK, maliciousContent);
+
+        using var host = await new HostBuilder()
+            .ConfigureWebHost(webBuilder =>
+            {
+                webBuilder.UseEnvironment("Development");
+                webBuilder.UseTestServer();
+                webBuilder.ConfigureServices(services =>
+                {
+                    services.AddControllersWithViews();
+                    services.AddDevErrorAssistant(options =>
+                    {
+                        options.Ai.Enabled = true;
+                        options.Ai.ApiKey = "fake-test-key";
+                    });
+                    services.AddSingleton<IHttpClientFactory>(new TestHttpClientFactory(fakeHandler));
+                });
+                webBuilder.Configure(app =>
+                {
+                    app.UseDevErrorAssistant();
+                    app.Run(context =>
+                    {
+                        throw new InvalidOperationException("XSS test");
+                    });
+                });
+            })
+            .StartAsync();
+
+        var client = host.GetTestClient();
+        var response = await client.GetAsync("/ai-xss-test");
+
+        var rawContent = await response.Content.ReadAsStringAsync();
+
+        // The raw HTML must NOT contain unencoded executable script tags
+        Assert.DoesNotContain("<script>alert('xss-exploit')</script>", rawContent);
+        Assert.DoesNotContain("<img src=x onerror=alert(1)>", rawContent);
+
+        // Instead, it must be HTML-encoded
+        Assert.Contains("&lt;script&gt;alert(&#x27;xss-exploit&#x27;)&lt;/script&gt;", rawContent);
     }
 }
