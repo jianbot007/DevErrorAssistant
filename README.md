@@ -3,15 +3,14 @@
 [![NuGet Version](https://img.shields.io/nuget/v/DevErrorAssistant.svg)](https://www.nuget.org/packages/DevErrorAssistant)
 [![.NET](https://img.shields.io/badge/.NET-8.0%20%7C%209.0-purple.svg)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-30%20Passing-brightgreen.svg)]()
 
-> A developer-friendly ASP.NET Core diagnostic error page with optional, privacy-conscious AI-powered exception analysis.
+> A developer-friendly ASP.NET Core diagnostic error page with optional AI-powered exception analysis.
 
-`DevErrorAssistant` captures unhandled exceptions in your ASP.NET Core request pipeline and renders a clean, interactive diagnostic page. During development, you get complete error diagnostics, collapsible stack traces, and optional **Groq AI-powered explanations, likely causes, and code fixes**. In production, sensitive server details are safely suppressed by default.
+`DevErrorAssistant` captures unhandled exceptions in your ASP.NET Core request pipeline and renders a diagnostic page. During development, you can inspect exception details and collapsible stack traces, with optional **Groq AI-powered explanations, likely causes, recommended steps, and possible fixes**. Detailed server information is hidden by default outside Development.
 
 ---
 
-## ⚡ Quick Start (30 Seconds)
+## ⚡ Quick Start
 
 ### 1. Install via NuGet
 
@@ -20,188 +19,187 @@ dotnet add package DevErrorAssistant
 ```
 
 Or via Package Manager Console:
+
 ```powershell
 Install-Package DevErrorAssistant
 ```
 
----
-
 ### 2. Configure `Program.cs`
-
-Add **two lines** to your `Program.cs`:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
-// 1. Register DevErrorAssistant services
 builder.Services.AddDevErrorAssistant(options =>
 {
-    // Opt-in to AI explanations in Development mode
+    // AI explanations are optional and disabled by default.
     options.Ai.Enabled = builder.Environment.IsDevelopment();
 });
 
 var app = builder.Build();
 
-// 2. Register DevErrorAssistant as the FIRST middleware in the pipeline
+// Register early to catch exceptions from downstream middleware.
 app.UseDevErrorAssistant();
 
-// Standard downstream middleware
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
-app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
 ```
 
-> **Why register first?** Placing `app.UseDevErrorAssistant()` at the top ensures its `try/catch` boundary encompasses all downstream routing, authentication, authorization, and endpoint execution.
+> **Why register early?** Placing `app.UseDevErrorAssistant()` before downstream middleware and endpoints allows it to catch unhandled exceptions from those components. Exceptions occurring after the HTTP response has started cannot be handled by replacing the response.
 
 ---
 
 ## 🚀 Key Features
 
-- **Packaged Razor View (RCL)**: Ships precompiled views directly inside the NuGet package. No need to copy `.cshtml` files into your project.
-- **Interactive Developer Diagnostics**: Clean, modern dark-mode interface displaying exception type, message, and collapsible stack trace.
-- **Optional Groq AI Diagnostics**: Translates cryptic runtime exceptions into plain-English explanations, likely root causes, step-by-step troubleshooting, and concrete code fixes.
-- **Zero Crashes & Fault Tolerant**: If AI is disabled, network drops, or no API key is configured, your application never crashes. The diagnostic page renders normally with a status notice.
-- **Automatic Privacy Sanitization**: Scrubs database passwords, Bearer tokens, and API keys, and bounds message/trace lengths before sending context to external AI.
-- **Safe-by-Default Production Mode**: In Staging/Production, detailed stack traces and raw error messages are automatically hidden to protect sensitive server paths and credentials.
-- **Streaming Response Protection**: Checks `context.Response.HasStarted`. If headers have already streamed, the middleware logs and safely rethrows without corrupting the response.
-- **XSS-Safe**: All dynamic exception data and AI responses are safely HTML-encoded.
-- **Broad Compatibility**: Built for both **.NET 8 (LTS)** and **.NET 9**.
+- **Packaged Razor View (RCL):** Includes the diagnostic view in the NuGet package; no need to copy `.cshtml` files into your application.
+- **Developer Diagnostics:** Displays exception information and a collapsible stack trace when detailed diagnostics are enabled.
+- **Optional Groq AI Diagnostics:** Provides plain-English explanations, likely causes, troubleshooting steps, and possible fixes.
+- **Graceful AI Fallback:** Handles common AI provider failures without requiring a successful AI response to render the error page.
+- **Best-Effort Secret Sanitization:** Attempts to redact common credentials and tokens and limits exception-context length before AI analysis.
+- **Production-Aware Diagnostics:** Detailed exception information is hidden by default outside Development.
+- **Streaming Response Protection:** Checks `context.Response.HasStarted` and logs and rethrows exceptions when the response cannot safely be replaced.
+- **HTML Output Encoding:** Encodes dynamic content in the HTML fallback renderer.
+- **.NET Compatibility:** Targets .NET 8 and .NET 9.
 
 ---
 
 ## 🤖 Configuring AI Explanations (Groq)
 
-AI diagnostics are completely **opt-in** and disabled by default. When enabled, `DevErrorAssistant` uses Groq's official OpenAI-compatible Chat Completions API.
+AI diagnostics are **opt-in** and disabled by default. When enabled, `DevErrorAssistant` uses Groq's OpenAI-compatible Chat Completions API.
 
 ### Step 1: Set Your API Key Securely
 
-For local development, store your Groq API key in [.NET User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) so it is never committed to Git:
+For local development, use [.NET User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets):
 
 ```bash
-dotnet user-secrets set "Groq:ApiKey" "gsk_your_groq_api_key_here"
+dotnet user-secrets init
+dotnet user-secrets set "Groq:ApiKey" "YOUR_GROQ_API_KEY"
 ```
 
-> **Configuration Precedence:** The library automatically resolves the key at runtime from standard .NET configuration providers:
-> 1. `options.Ai.ApiKey` (if set programmatically)
-> 2. `builder.Configuration["Groq:ApiKey"]` (User Secrets, Environment Variables, or Azure Key Vault)
+Run `dotnet user-secrets init` only if User Secrets has not already been initialized for the project.
 
-### Step 2: Customizing Options (Optional)
+The library supports providing the API key through `options.Ai.ApiKey` or the `Groq:ApiKey` configuration setting. Never commit real API keys to source control.
 
-You can customize the model, timeout, and sanitization settings in `Program.cs` or `appsettings.json`:
+### Step 2: Customize Options (Optional)
 
 ```csharp
 builder.Services.AddDevErrorAssistant(options =>
 {
-    // Enable/disable AI
     options.Ai.Enabled = builder.Environment.IsDevelopment();
+    options.Ai.Provider = "Groq";
 
-    // Groq model (default: "llama-3.3-70b-versatile")
-    // Also supports "openai/gpt-oss-120b", "openai/gpt-oss-20b", etc.
+    // Default model
     options.Ai.Model = "llama-3.3-70b-versatile";
 
-    // Request timeout (default: 10 seconds)
+    // Request timeout
     options.Ai.Timeout = TimeSpan.FromSeconds(10);
 
-    // Context sanitization limits
+    // Exception-context sanitization
     options.Ai.Sanitization.MaxMessageLength = 1000;
     options.Ai.Sanitization.MaxStackTraceLength = 3000;
     options.Ai.Sanitization.RedactCommonSecrets = true;
 });
 ```
 
-Or configure via `appsettings.Development.json`:
-
-```json
-{
-  "DevErrorAssistant": {
-    "Ai": {
-      "Enabled": true,
-      "Model": "llama-3.3-70b-versatile"
-    }
-  }
-}
-```
+The configured model must be available to your Groq account. AI analysis depends on provider availability, network connectivity, and applicable API limits.
 
 ---
 
 ## 🔒 Privacy & Sanitization
 
-Before sending exception context to the AI provider, `DevErrorAssistant` applies strict sanitization:
+Before sending exception context to the AI provider, `DevErrorAssistant` attempts to sanitize it.
 
-| Scrubbed Data | Replacement |
+| Data pattern | Sanitization behavior |
 | :--- | :--- |
-| `Authorization: Bearer <token>` | `Bearer [REDACTED_TOKEN]` |
-| `Password=...;`, `pwd=...;`, `User ID=...;` | `[REDACTED]` |
-| API keys matching `gsk_*`, `sk_*`, `api_key: ...` | `[REDACTED]` |
-| Oversized messages / stack traces | Truncated to safe bounded lengths |
+| Bearer and Basic authorization tokens | Attempts to replace detected tokens with a redaction marker |
+| Connection-string credentials such as `Password`, `Pwd`, and `User ID` | Attempts to redact detected credential values |
+| Common API-key and secret key/value patterns | Attempts to redact matching values |
+| Oversized exception messages and stack traces | Truncates to configured maximum lengths |
+| Nested inner exceptions | Includes a bounded summary, subject to sanitization settings |
 
-> **Privacy Guarantee:** HTTP request bodies, cookies, session state, authorization headers, environment variables, configuration dumps, and local source code files are **never** transmitted to the AI provider.
+**Important:** Sanitization is best-effort and cannot guarantee that every secret or piece of sensitive information will be removed.
+
+When AI analysis is enabled, sanitized exception context may be sent to the external AI provider. The library does not intentionally send HTTP request bodies, cookies, session state, or entire configuration dumps as part of its exception-analysis context. However, exception messages and stack traces can themselves contain sensitive information.
+
+Review the implementation and your provider's data-handling terms before enabling AI analysis in production.
 
 ---
 
 ## 🛡️ Development vs. Production Behavior
 
-| Feature | Development Mode (`ASPNETCORE_ENVIRONMENT=Development`) | Production Mode (`ASPNETCORE_ENVIRONMENT=Production`) |
+| Feature | Development (default behavior) | Other environments (default behavior) |
 | :--- | :--- | :--- |
-| **HTTP Status Code** | `500 Internal Server Error` | `500 Internal Server Error` |
-| **Exception Type** | Full type (e.g., `System.NullReferenceException`) | Generic safe title (`"An error occurred"`) |
-| **Exception Message** | Raw developer message | Safe generic message |
-| **Stack Trace** | Interactive collapsible `<details>` | **Completely omitted** (null) |
-| **AI Suggestions** | Active (if enabled and key configured) | **Disabled** |
-| **Server Logs** | Full stack trace logged via `ILogger.LogError` | Full stack trace logged via `ILogger.LogError` |
+| HTTP status code | `500 Internal Server Error` | `500 Internal Server Error` |
+| Exception details | Detailed diagnostics shown by default | Detailed diagnostics hidden by default |
+| Stack trace | Available when detailed diagnostics are enabled | Hidden by default |
+| AI analysis | Disabled unless explicitly enabled | Disabled unless explicitly enabled |
+| Server-side logging | Exceptions logged through `ILogger` | Exceptions logged through `ILogger` |
+
+The `ShowDetailedDiagnostics` option can override the default detail-visibility behavior. Review this setting carefully before exposing diagnostic information outside Development.
 
 ---
 
 ## 🧪 Testing with the Demo App
 
-A complete demo application is included in `DevErrorAssistant.Demo`:
+The repository includes a demo application in `DevErrorAssistant.Demo`.
 
-1. Run the demo:
-   ```bash
-   dotnet run --project DevErrorAssistant.Demo
-   ```
-2. Open `http://localhost:5248` in your browser.
-3. Click **"Trigger Test Exception"** (`/Home/ThrowError`).
-4. **Without an API key**: The error page displays the full exception, stack trace, and clearly notes that `Groq:ApiKey` is not configured (no crash!).
-5. **With an API key set in User Secrets**: The page displays AI-generated explanation, likely causes, recommended steps, and fixes.
+Run it with:
+
+```bash
+dotnet run --project DevErrorAssistant.Demo/DevErrorAssistant.Demo.csproj
+```
+
+Open the local URL printed by the application, then trigger a sample exception using the demo's error-testing endpoint.
+
+- **Without an API key:** AI analysis may be unavailable, but the diagnostic page should not depend on a successful AI response.
+- **With an API key:** When AI is enabled and the provider request succeeds, the page can display an AI-generated explanation and recommendations.
 
 ---
 
 ## 📦 Building the NuGet Package Locally
 
-To build the NuGet package and symbols:
+Build the library package with:
 
 ```bash
-dotnet pack -c Release DevErrorAssistant/DevErrorAssistant.csproj -o ./artifacts/packages
+dotnet pack DevErrorAssistant/DevErrorAssistant.csproj -c Release -o ./artifacts/packages
 ```
 
-To use the local package in another project:
+To test the package in another project, add the local package directory as a NuGet source:
+
 ```bash
-dotnet nuget add source "<repo-path>/artifacts/packages" --name LocalDevPackages
-dotnet add package DevErrorAssistant --version 1.0.0
+dotnet nuget add source "./artifacts/packages" --name LocalDevPackages
 ```
+
+Then install the package into your test application using that local source. Remove the source when you no longer need it:
+
+```bash
+dotnet nuget remove source LocalDevPackages
+```
+
+Before publishing, verify the generated `.nupkg`, package metadata, README inclusion, dependencies, and target frameworks.
 
 ---
 
 ## 📋 Running Automated Tests
 
-The solution includes a comprehensive test suite covering middleware pipeline execution, production security, AI HTTP mock flows, network timeouts, and sanitization:
+Run the solution's test suite from the repository root:
 
 ```bash
-dotnet test
+dotnet test DevErrorAssistant.sln --configuration Release
 ```
 
-```text
-Passed!  - Failed: 0, Passed: 30, Skipped: 0, Total: 30
-```
+Run the command and verify the actual results before adding a passing-test badge or publishing a test count.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is intended to use the [MIT License](LICENSE). Ensure that the repository contains the matching `LICENSE` file before publishing.
