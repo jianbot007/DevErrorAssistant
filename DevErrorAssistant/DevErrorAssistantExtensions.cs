@@ -2,7 +2,6 @@ using DevErrorAssistant;
 using DevErrorAssistant.Ai;
 using DevErrorAssistant.Middleware;
 using DevErrorAssistant.Rendering;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
