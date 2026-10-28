@@ -1,3 +1,4 @@
+
 # DevErrorAssistant
 
 [![NuGet Version](https://img.shields.io/nuget/v/DevErrorAssistant.svg)](https://www.nuget.org/packages/DevErrorAssistant)
@@ -90,24 +91,35 @@ The library supports providing the API key through `options.Ai.ApiKey` or the `G
 
 ### Step 2: Customize Options (Optional)
 
+Configure AI enablement and the model in `Program.cs`. Other AI settings can be configured in `appsettings.Development.json`.
+
 ```csharp
 builder.Services.AddDevErrorAssistant(options =>
 {
     options.Ai.Enabled = builder.Environment.IsDevelopment();
-    options.Ai.Provider = "Groq";
-
-    // Default model
-    options.Ai.Model = "llama-3.3-70b-versatile";
-
-    // Request timeout
-    options.Ai.Timeout = TimeSpan.FromSeconds(10);
-
-    // Exception-context sanitization
-    options.Ai.Sanitization.MaxMessageLength = 1000;
-    options.Ai.Sanitization.MaxStackTraceLength = 3000;
-    options.Ai.Sanitization.RedactCommonSecrets = true;
+    options.Ai.Model = "openai/gpt-oss-120b";
 });
 ```
+
+Configure the remaining AI settings in `appsettings.Development.json`:
+
+```json
+{
+  "DevErrorAssistant": {
+    "Ai": {
+      "Provider": "Groq",
+      "Timeout": "00:00:10",
+      "Sanitization": {
+        "MaxMessageLength": 1000,
+        "MaxStackTraceLength": 3000,
+        "RedactCommonSecrets": true
+      }
+    }
+  }
+}
+```
+
+Keep your API key in .NET User Secrets or another secure configuration source. Never commit a real API key to source control.
 
 The configured model must be available to your Groq account. AI analysis depends on provider availability, network connectivity, and applicable API limits.
 
