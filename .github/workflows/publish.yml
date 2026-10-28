@@ -1,0 +1,51 @@
+
+name: Publish DevErrorAssistant to NuGet
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: Restore
+        run: dotnet restore DevErrorAssistant/DevErrorAssistant.csproj
+
+      - name: Build
+        run: dotnet build DevErrorAssistant/DevErrorAssistant.csproj --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test DevErrorAssistant.Tests/DevErrorAssistant.Tests.csproj --configuration Release
+
+      - name: Pack NuGet package
+        run: dotnet pack DevErrorAssistant/DevErrorAssistant.csproj --configuration Release --no-build --output ./artifacts
+
+      - name: NuGet login using Trusted Publishing
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: Mahfuz007
+
+      - name: Publish to NuGet.org
+        run: dotnet nuget push "./artifacts/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
